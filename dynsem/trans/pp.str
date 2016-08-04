@@ -3,22 +3,14 @@ module pp
 imports
   libstratego-lib
   libstratego-gpp
-  lib/runtime/tmpl/pp
-  src-gen/signatures/-
-  src-gen/pp/-
-  include/ds-parenthesize
+  runtime/tmpl/pp
+  signatures/-
+  pp/-
+  pp/ds-parenthesize
   ds
   
 rules
   
-  prettyprint-Term :
-    MatchedVar(a) -> [ H(
-                       [SOpt(HS(), "0")]
-                     , [a813]
-                     )
-                   ]
-    where a813 := <pp-one-Z(prettyprint-ID)> a
-
   prettyprint-Var :
     Var(t1__) -> [ H(
                         [SOpt(HS(), "0")]

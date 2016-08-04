@@ -1,49 +1,121 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>dynsem</artifactId>
-  <packaging>eclipse-plugin</packaging>
+  <name>ds</name>
+  <packaging>spoofax-language</packaging>
   <description>Spoofax DynSem (dynamic semantic specification) language implementation.</description>
   <url>https://github.com/metaborg/dynsem</url>
 
   <parent>
     <groupId>org.metaborg</groupId>
-    <artifactId>org.metaborg.maven.parent.language</artifactId>
-    <version>1.5.0-SNAPSHOT</version>
-    <relativePath>../../spoofax-deploy/org.metaborg.maven.parent.language</relativePath>
+    <artifactId>parent.language</artifactId>
+    <version>2.1.0-SNAPSHOT</version>
+    <relativePath>../../releng/parent/language</relativePath>
   </parent>
+
 
   <build>
     <plugins>
-      <!-- Hack to prevent the src-gen folder from being cleaned. Since the build cannot run meta-languages such as SDF3, the
-        src-gen folder is committed to the git repository. The clean goal will clean the src-gen folder, temporarily renaming
-        it will prevent that. This hack overrides the spoofax-clean antrun execution from the parent POM. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
+        <artifactId>maven-install-plugin</artifactId>
         <executions>
           <execution>
-            <id>spoofax-clean</id>
+            <id>install-stratego-jar</id>
+            <phase>install</phase>
             <goals>
-              <goal>run</goal>
+              <goal>install-file</goal>
             </goals>
-            <phase>clean</phase>
             <configuration>
-              <skip>${skip-language-build}</skip>
-              <target>
-                <move file="src-gen" tofile="src-gen-keep" />
-                <ant antfile="build.main.xml" inheritRefs="true">
-                  <target name="clean" />
-                </ant>
-                <move file="src-gen-keep" tofile="src-gen" />
-              </target>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>dynsem.lib.stratego.jar</artifactId>
+              <version>${project.version}</version>
+              <packaging>jar</packaging>
+              <file>${basedir}/target/metaborg/stratego.jar</file>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-stratego-javastrat</id>
+            <phase>install</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>dynsem.lib.stratego.javastrat</artifactId>
+              <version>${project.version}</version>
+              <packaging>jar</packaging>
+              <file>${basedir}/target/metaborg/stratego-javastrat.jar</file>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>deploy-stratego-jar</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy-file</goal>
+            </goals>
+            <configuration>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>dynsem.lib.stratego.jar</artifactId>
+              <version>${project.version}</version>
+              <packaging>jar</packaging>
+              <file>${basedir}/target/metaborg/stratego.jar</file>
+              <repositoryId>${deployRepositoryId}</repositoryId>
+              <url>${deployFileUrl}</url>
+            </configuration>
+          </execution>
+          <execution>
+            <id>deploy-stratego-javastrat</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy-file</goal>
+            </goals>
+            <configuration>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>dynsem.lib.stratego.javastrat</artifactId>
+              <version>${project.version}</version>
+              <packaging>jar</packaging>
+              <file>${basedir}/target/metaborg/stratego-javastrat.jar</file>
+              <repositoryId>${deployRepositoryId}</repositoryId>
+              <url>${deployFileUrl}</url>
             </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.metaborg</groupId>
+      <artifactId>org.metaborg.meta.lang.esv</artifactId>
+      <type>spoofax-language</type>
+      <version>${metaborg-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.metaborg</groupId>
+      <artifactId>org.metaborg.meta.lang.template</artifactId>
+      <type>spoofax-language</type>
+      <version>${metaborg-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.metaborg</groupId>
+      <artifactId>org.metaborg.meta.lib.analysis</artifactId>
+      <type>spoofax-language</type>
+      <version>${metaborg-version}</version>
+    </dependency>
+  </dependencies>
 
   <developers>
     <developer>
@@ -59,11 +131,4 @@
     <developerConnection>scm:git:git@github.com:metaborg/dynsem.git</developerConnection>
     <url>https://github.com/metaborg/dynsem</url>
   </scm>
-  <dependencies>
-    <dependency>
-      <groupId>org.metaborg</groupId>
-      <artifactId>org.metaborg.meta.interpreter.framework</artifactId>
-      <version>${metaborg-version}</version>
-    </dependency>
-  </dependencies>
 </project>

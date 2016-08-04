@@ -1,0 +1,16 @@
+module Menus
+
+menus
+  
+  menu: "Syntax"
+    
+    action: "Format"               = format-editor (openeditor) 
+    action: "Show Abstract Syntax" = debug-show-aterm (source) (openeditor) (meta) 
+    action: "Show Desugared Syntax" = debug-show-desugared (source) (openeditor) (meta) 
+                                                                                                                                                                                         
+  menu: "Semantics"
+
+    action  : "Generate DynSem Core"   = module-to-core-editor (openeditor) (source)
+    action  : "Generate Coq"           = generate-coq (openeditor) (meta)
+    action  : "Generate Interpreter"   = ds-to-interp-editor
+    action  : "Explicate arrow types"  = explicate-arrow-types-editor (openeditor) (source) (meta)
