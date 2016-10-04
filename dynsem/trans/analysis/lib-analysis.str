@@ -129,6 +129,9 @@ rules // type rewriting
     ListType(ty) -> ListSort(<derw-type> ty)
   
   derw-type:
+    TupleType(ty*) -> TupleSort(<map(derw-type)> ty*)
+  
+  derw-type:
     MapType(kty, vty) -> MapSort(<derw-type> kty, <derw-type> vty)
 
   derw-type:
@@ -147,6 +150,8 @@ rules // type rewriting
   derw-type: BoolType() -> <derw-type> "Bool"
   
   derw-type: StringType() -> <derw-type> "String"
+  
+  derw-type: ASTType() -> <derw-type> "AST"
   
   id-to-type = id-to-builtin-type <+ is-string
 
@@ -167,6 +172,9 @@ rules // type rewriting
   
   id-to-builtin-type:
     "String" -> StringType()
+  
+  id-to-builtin-type:
+    "AST" -> ASTType()
   
   pp-type = pp-type-builtin <+ is-string <+ is-list; map(pp-type); separate-by(|", "); concat-strings
  
