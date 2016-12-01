@@ -42,7 +42,12 @@ rules /* Sort & Constructor classes */
       tuple-class* := <map(ds-to-interp-terms-tupledecl)> tuple-dec*;
       list-class* := <map(ds-to-interp-terms-listdecl)> list-dec*
   
-  get-languagelist-usage-in-signatures = collect-all(?ListSort(_)); nub
+  get-languagelist-usage-in-signatures:
+    sig -> [explicit-list*, implicit-map-key*, implicit-map-val*]
+    where
+      explicit-list* := <collect-all(?ListSort(_)); nub> sig;
+      implicit-map-key* := <collect-all(\ MapSort(k, _) -> ListSort(k) \); nub> sig;
+      implicit-map-val* := <collect-all(\ MapSort(_, v) -> ListSort(v) \); nub> sig
   
   get-languagetuple-usage-in-signatures = collect-all(?TupleSort(_)); nub
   
@@ -373,12 +378,14 @@ rules /* Sort & Constructor classes */
       compilation-unit |[
         package ~x:<get-opt> TermPkg();
 
+        import java.util.Collection;
         import java.util.Iterator;
         import org.apache.commons.lang3.builder.HashCodeBuilder;
         import org.metaborg.meta.lang.dynsem.interpreter.nodes.matching.ITermInstanceChecker;
         import org.metaborg.meta.lang.dynsem.interpreter.terms.IListTerm;
         import com.github.krukow.clj_lang.IPersistentStack;
         import com.github.krukow.clj_lang.PersistentList;
+        import com.github.krukow.clj_lang.ISeq;
         import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
         import com.oracle.truffle.api.CompilerAsserts;
         import org.spoofax.interpreter.core.Tools;
@@ -392,6 +399,10 @@ rules /* Sort & Constructor classes */
         
           public x_listclass(x_elemclass[] elems) {
             this(elems, null);
+          }
+ 
+          public x_listclass(Collection<x_elemclass> elemSet) {
+            this(elemSet.toArray(new x_elemclass[0]));
           }
         
           @SuppressWarnings("unchecked")
@@ -412,7 +423,8 @@ rules /* Sort & Constructor classes */
           @Override
           public boolean hasStrategoTerm() {
             return strategoTerm != null;
-          }        
+          }
+          
           @Override
           public int size() {
             return backend.count();
@@ -427,6 +439,15 @@ rules /* Sort & Constructor classes */
                 return obj instanceof x_listclass;
               }
             };
+          }
+          
+          @Override
+          public x_elemclass get(int n) {
+            ISeq<x_elemclass> seq = backend.seq();
+            for (int k = 0; k < n; k++) {
+              seq = seq.next();
+            }
+            return seq != null ? seq.first() : null;
           }
         
           @Override
@@ -575,15 +596,15 @@ rules /* Sort & Constructor classes */
       e |[
         new Object() {
           public com.github.krukow.clj_lang.PersistentHashMap apply() {
-            IStrategoAppl x_mapT = (IStrategoAppl) e_term;
-            assert Tools.hasConstructor(x_mapT, "Map", 1);
+            IStrategoTerm x_mapT = e_term;
+            assert Tools.isTermList(x_mapT);
           
-            IStrategoList x_bindsT = Tools.listAt(x_mapT, 0);
+            IStrategoList x_bindsT = (IStrategoList)x_mapT;
           
             java.util.Map<x_keyclass, x_valclass> x_map = new java.util.HashMap<x_keyclass, x_valclass>(
                 Math.round(x_bindsT.size() / 0.75f), 0.75f);
             for (IStrategoTerm x_bindT : x_bindsT) {
-              assert Tools.isTermAppl(x_bindT) && Tools.hasConstructor((IStrategoAppl) x_bindT, "Bind", 2);
+              assert Tools.isTermTuple(x_bindT) && x_bindT.getSubtermCount() == 2;
               x_map.put(e_keycreate, e_valcreate);
             }
             return com.github.krukow.clj_lang.PersistentHashMap.create(x_map);

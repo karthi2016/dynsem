@@ -51,6 +51,9 @@ rules
     Cast(_, srt@SimpleSort(s)) -> (SortKind(), <ds-to-interp-terms-types-name; qualify-term-class> srt)
     where
       <not(is-builtin-type)> s
+
+  get-relation-kind-class:
+    Cast(_, SimpleSort("AST")) -> (ASTKind(), "org.metaborg.meta.lang.dynsem.interpreter.terms.ITerm")
   
   get-relation-kind-class:
     Cast(_, SimpleSort("String")) -> (PrimitiveKind(), "java.lang.String")
@@ -66,6 +69,9 @@ rules
   
   get-relation-kind-class:
     Cast(_, srt@ListSort(_)) -> (ListKind(), <ds-to-interp-terms-types-name; qualify-term-class> srt)
+  
+  get-relation-kind-class:
+    Cast(_, srt@TupleSort(_)) -> (TupleKind(), <ds-to-interp-terms-types-name; qualify-term-class> srt)
 
   qualify-term-class:
     class -> $[[<get-opt> TermPkg()].[class]]
@@ -132,7 +138,7 @@ rules /* native operators */
 
 rules /* desugar rule conclusion/premise source */
 
-  desugar-semantic-components = alltd(desugar-rule-conclusion-source); alltd(desugar-relation-premise-source)
+  desugar-semantic-components = topdown(repeat(desugar-rule-conclusion-source <+ desugar-relation-premise-source))
 
   desugar-rule-conclusion-source:
     Rule(p*, infer, Relation(Reads(ro*), Source(t, rw*), rel, tgt), kind, class) -> Rule(p*, infer, Relation(Source(t, [ro*, rw*]), rel, tgt), kind, class) 
@@ -254,15 +260,40 @@ rules /* resugar list construction */
       list-class := <ds-to-interp-terms-types-name; qualify-term-class> list-sort
   
   add-typeanno-to-list-tuples:
-    LabelComp(list-sort, List([])) -> LabelComp(list-sort, TypedList([], list-class))
+    LabelComp(Label(l), List([])) -> LabelComp(Label(l), TypedList([], list-class))
     where
+      list-sort := <lookup-def(|Components()); lookup-prop(|Type())> l;
       list-class := <ds-to-interp-terms-types-name; qualify-term-class> list-sort
+  
+  add-typeanno-to-list-tuples:
+    Cast(Tuple(t*), tuple-sort@TupleSort(_)) -> TypedTuple(t*, <ds-to-interp-terms-types-name; qualify-term-class> tuple-sort) 
   
   add-typeanno-to-list-tuples:
     tup@Tuple(t*) -> TypedTuple(t*, tuple-class)
     where
-      tuple-sort := <type-of; derw-type> tup; 
+      tuple-sort := <type-of; derw-type> tup;
       tuple-class := <ds-to-interp-terms-types-name; qualify-term-class> tuple-sort
+  
+  add-typeanno-to-list-tuples:
+    MapKeys(t) -> TypedMapKeys(t, keylist-class)
+    where
+      MapType(k, _) := <type-of> t;
+      keylist-class := <derw-type; ds-to-interp-terms-types-name; qualify-term-class> ListType(k)
+  
+  add-typeanno-to-list-tuples:
+    MapValues(t) -> TypedMapValues(t, valuelist-class)
+    where
+      MapType(_, v) := <type-of> t;
+      valuelist-class := <derw-type; ds-to-interp-terms-types-name; qualify-term-class> ListType(v)
+  
+  add-typeanno-to-list-tuples:
+    Relation(src, arr@NamedDynamicEmitted(_, arr-name, in-sort), Target(Tuple(tup-t*), o-rw*)) ->
+      Relation(src, arr, Target(TypedTuple(tup-t*, tuple-class), o-rw*))
+    where
+      in-ty := <rw-type> in-sort;
+      arr-def* := <lookup-defs(|Arrows())> arr-name;
+      ArrowType(_, out-ty) := <get-applicable-arrowdef(flip(type-coerce-direct(fail))); lookup-prop(|Type())> (arr-def*, in-ty);
+      tuple-class := <derw-type; ds-to-interp-terms-types-name; qualify-term-class> out-ty
 
 
 

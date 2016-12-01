@@ -12,6 +12,7 @@ rules
       ; <file-exists + mkdir> project
       ; ds-to-interp-gen-project-launchconfig
       ; ds-to-interp-gen-project-pom
+      ; ds-to-interp-gen-project-gitignore
       ; java-gendir := <get-opt> JavaGenDirAbs()
       ; <file-exists + mkdir> <concat-strings> [java-gendir, "/", <string-replace(|".", "/")> <get-opt> TopPkg()]
       ; <file-exists + mkdir> <concat-strings> [java-gendir, "/", <string-replace(|".", "/")> <get-opt> NativePkg()]
@@ -35,6 +36,43 @@ rules
                 <configuration>
                   <source>1.8</source>
                   <target>1.8</target>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                  <execution>
+                    <id>auto-clean</id>
+                    <phase>clean</phase>
+                    <goals>
+                      <goal>clean</goal>
+                    </goals>
+                    <configuration>
+                      <filesets>
+                        <fileset>
+                          <directory>[<get-opt; get-rel-path> TopPkg()]</directory>
+                          <includes>**/**</includes>
+                        </fileset>
+                        <fileset>
+                          <directory>${basedir}</directory>
+                          <includes>[<get-opt> TargetSpecRel()]</includes>
+                        </fileset>
+                        <fileset>
+                          <directory>${basedir}</directory>
+                          <includes>[<get-opt> TargetTableRel()]</includes>
+                        </fileset>
+                      </filesets>
+                    </configuration>
+                  </execution>
+                </executions>
+              </plugin>
+              <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                  <argLine>[<get-opt> JVMArgs()]</argLine>
                 </configuration>
               </plugin>
             </plugins>
@@ -104,8 +142,29 @@ rules
         <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${resource_loc}"/>
         <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="[<get-opt> MavenArtifactId()]"/>
         <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
+        <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="[<get-opt> JVMArgs()]"/>
       </launchConfiguration>
     ], launch-file);
     <fclose> launch-file
+
+  ds-to-interp-gen-project-gitignore =
+    gitignore := <fopen> (<concat-strings> [<get-opt> GenProject(), "/", ".gitignore"], "w");
+    <fputs> ($[
+      /target/
+      [<get-opt> TargetSpecRel()]
+      [<get-opt> TargetTableRel()]
+      [<get-opt; get-rel-path> TopPkg()]
+      [<get-opt; get-rel-path> TermPkg()]
+      [<get-opt; get-rel-path> BuildPkg()]
+      [<get-opt; get-rel-path> MatchPkg()]
+      /[<get-opt> LangName()].launch
+    ], gitignore);
+    <fclose> gitignore
+
+
+  get-rel-path:
+    pkg -> <concat-strings> [basedir, "/", <string-replace(|".", "/")> pkg]
+    where
+      basedir := <get-opt> JavaGenDirRel()
 
     

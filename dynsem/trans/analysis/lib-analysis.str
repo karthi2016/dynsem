@@ -2,53 +2,31 @@ module analysis/lib-analysis
 
 imports
   signatures/-
-  analysis/constructors
-  import-utils
+  analysis/-
 
 rules
 	
-	new-analysis-scope(s) = {| Renames, InvRenames, Declared, Properties, Messages: s |}
+	new-analysis-scope(s) = {| Declared, Properties, Messages: s |}
 
   in-project-path(s|project-path) = {| OptProjectPath:
     rules(OptProjectPath: _ -> project-path);
     s
   |}
 
-rules // renaming
-  
-  new-scope-renames(s) = {| Renames: s |}
-  
-  rename(|namespace):
-    name -> name'
-    where
-      <Renames> (namespace, name) => name'
-  
-  rename(|namespace):
-    name -> name'
-    where
-      <not(Renames)> (namespace, name)
-    with
-      name' := <newname> name;
-      rules(
-        Renames:+ (namespace, name) -> name'
-        InvRenames:+ name' -> (namespace, name)
-      )
-   
-  invrename(|namespace):
-    name' -> name
-    where
-      <InvRenames> name' => (_, name)
-
 rules // storing and looking up
   
-  def-get-name = Snd
+  def-get-name = ?(_, <id>, _)
   
-  def-get-namespace = Fst
+  def-get-namespace = ?(<id>, _, _)
+  
+  new-def:
+    (namespace, name) -> (namespace, name, <newname> name)
   
   store-def(|namespace):
-    name -> (namespace, name)
+    name -> defi
     where
-      rules(Declared:+ (namespace, name) -> (namespace, name))
+      defi := <new-def> (namespace, name);
+      rules(Declared:+ (namespace, name) -> defi)
   
   lookup-def(|namespace):
     name -> <Declared> (namespace, name)
@@ -198,6 +176,9 @@ rules // type rewriting
   
   pp-type-builtin:
   	StringType() -> "String"
+  
+  pp-type-builtin:
+    ASTType() -> "AST"
   
   pp-type-builtin:
     ListType(ety) -> $[List([<pp-type> ety])]

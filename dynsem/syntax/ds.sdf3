@@ -32,16 +32,6 @@ context-free syntax // rules
   Premise.Formula = [[Formula]]
   Premise.AllFail = <all-fail> {deprecated}
 
-  PremisesBlock.PremiseBlock = <{
-    <{Premise ";\n"}*>
-  }>
-
-  Premise.MergePoint = [
-    [Premise]
-    < [PremisesBlock]
-    + [PremisesBlock]
-  ] {deprecated("Use a case pattern match instead")}
-  
   Premise.CaseMatch = [
     case [Term] of {
       [{Case "\n"}+]
@@ -58,11 +48,6 @@ context-free syntax // rules
       [{Premise ";\n"}*]
   ]
   
-  Premise.TryOr = [
-    try [PremisesBlock]
-  	or  [PremisesBlock]
-  ] {deprecated}
-
   ID = <_> {reject}
   ID = <imports> {reject}
   ID = <signature> {reject}
@@ -87,6 +72,8 @@ context-free syntax // rules
   ID = <allkeys> {reject}
   ID = <allvalues> {reject}
   ID = <otherwise> {reject}
+  ID = <semantic> {reject}
+  ID = <components> {reject}
 
 context-free syntax // formulas
 
@@ -117,8 +104,10 @@ context-free syntax // formulas
   Rel.DynamicEmitted = [-[{LabelComp ", "}+]-->]
   Rel.NamedDynamicEmitted = [-[{LabelComp ", "}+]-[IDNOHYPH]->]
   
-  LabelComp.LabelComp = [[Type] [Term]]
+  LabelComp.LabelComp = [[Label] [Term]]
   LabelComp.VarLabelComp = [[Var]]
+
+  Label.Label = [[ID]]
 
 lexical syntax 
 
@@ -141,9 +130,9 @@ context-free syntax // terms
   Term.Real     = [[REAL]]
   Term.Con      = [[ID]([{Term ", "}*])]
   
-  List.List     = <[ <{Term ", "}*> ]>
-  List.ListTail = <[ <{Term ", "}*> | <Term> ]>
-  Term = List
+  Term.List     = <[ <{Term ", "}*> ]>
+  Term.ListTail = <[ <{Term ", "}*> | <Term> ]>
+  Term.ListLength = <|<Term>|>
   
   Term.Tuple    = <(<{Term ", "}+>)>
 
@@ -153,13 +142,16 @@ context-free syntax // terms
   
   Term.Map    = [{[{Entry  ", "}*]}]
   Entry.Bind  = [[Term] |--> [Term]]
-  Entry.Binds = [[Term] |*-> [Term]]
+
+//  Entry.Binds = [[Term] |*-> [Term]]
+
   Entry.MapEntry = [[Term]]
   
-  Term.MapSelect = <<Term>[<Term>]>
+  Term.DeAssoc = <<Term>[<Term>]>
+  
   Term.MapHas = <<Term>[<Term>?]>
   Term.MapExtend = [[Term] + [Term]] {assoc}
-  Term.MapUnbind = [[Term] \ [Term]] {assoc}
+//  Term.MapUnbind = [[Term] \ [Term]] {assoc}
 
   Term.MapKeys = [allkeys([Term])]
   Term.MapValues = [allvalues([Term])]
@@ -171,7 +163,7 @@ context-free priorities
   Rule.Axiom, Rule.Rule, Rule.RuleW
   > Term.MapKeys, Term.MapValues
   > Term.Con
-  > Term.MapHas, Term.MapSelect
+  > Term.MapHas, Term.DeAssoc
   > Term.MapExtend, Term.As
   > Cast.Cast
   

@@ -21,12 +21,17 @@ signature
 
     TypedTuple : Term * String -> Term
     
+    TypedMapKeys: Term * String -> Term
+    TypedMapValues: Term * String -> Term
+    
     Rule : List(Premise) * INFER * Relation * RuleKind * String -> Rule
     
     TermKind : RuleKind
     SortKind : RuleKind
+    ASTKind  : RuleKind
     PrimitiveKind : RuleKind
     NativeKind : RuleKind
     ListKind : RuleKind
+    TupleKind : RuleKind
     MapKind : RuleKind
     
